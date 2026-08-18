@@ -1,0 +1,2 @@
+# SentinelAI
+Mini project 
