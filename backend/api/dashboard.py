@@ -27,13 +27,9 @@ def get_dashboard_overview(
     )
 
 
-    verified_sessions = (
-        db.query(SessionModel)
-        .filter(
-            SessionModel.status == "VERIFIED"
-        )
-        .count()
-    )
+    verified_sessions = db.query(SessionModel).filter(
+    SessionModel.status.in_(["ACTIVE", "VERIFIED"])
+).count()
 
 
     average_typing_speed = (

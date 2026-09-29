@@ -91,3 +91,59 @@ def login(
         "name": user.name,
         "email": user.email
     }
+
+class ReauthRequest(BaseModel):
+    session_id: int
+    email: EmailStr
+    password: str
+
+
+@router.post("/reauthenticate")
+def reauthenticate(
+    data: ReauthRequest,
+    db: Session = Depends(get_db)
+):
+    from backend.database.models import Session as SessionModel
+
+    session = (
+        db.query(SessionModel)
+        .filter(SessionModel.id == data.session_id)
+        .first()
+    )
+
+    if not session:
+        raise HTTPException(
+            status_code=404,
+            detail="Session not found"
+        )
+
+    if session.status != "ACTIVE":
+        raise HTTPException(
+            status_code=400,
+            detail="Session is not active"
+        )
+
+    user = (
+        db.query(User)
+        .filter(User.email == data.email)
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid credentials"
+        )
+
+    if not verify_password(data.password, user.password_hash):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid credentials"
+        )
+
+    return {
+        "message": "Re-authentication successful",
+        "session_id": session.id,
+        "user_id": user.id,
+        "status": "VERIFIED"
+    }

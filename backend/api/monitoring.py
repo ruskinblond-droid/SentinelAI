@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from datetime import datetime
+
 from backend.database.database import get_db
 from backend.database.models import (
     Session as SessionModel,
@@ -11,6 +13,7 @@ from backend.database.models import (
 
 from backend.services.ml import predict
 from backend.services.risk_engine import calculate_risk
+from backend.services.adaptivelearning import update_behavior_profile
 
 
 router = APIRouter(
@@ -19,9 +22,9 @@ router = APIRouter(
 )
 
 
-# -----------------------------
+# ============================================================
 # START VERIFICATION
-# -----------------------------
+# ============================================================
 
 class StartVerificationRequest(BaseModel):
     user_id: int
@@ -52,9 +55,9 @@ def start_verification(
     }
 
 
-# -----------------------------
+# ============================================================
 # BEHAVIORAL FEATURES
-# -----------------------------
+# ============================================================
 
 class BehavioralFeatures(BaseModel):
 
@@ -86,9 +89,9 @@ def process_features(
     db: Session = Depends(get_db)
 ):
 
-    # -----------------------------
+    # --------------------------------------------------------
     # 1. Find session
-    # -----------------------------
+    # --------------------------------------------------------
 
     session = (
         db.query(SessionModel)
@@ -99,51 +102,64 @@ def process_features(
     )
 
     if not session:
-
         raise HTTPException(
             status_code=404,
             detail="Verification session not found"
         )
 
 
-    # -----------------------------
+    # --------------------------------------------------------
     # 2. Check session status
-    # -----------------------------
+    # --------------------------------------------------------
 
     if session.status != "ACTIVE":
-
         raise HTTPException(
             status_code=400,
             detail="Verification session is not active"
         )
 
 
-    # -----------------------------
-    # 3. Convert features
-    # -----------------------------
+    # --------------------------------------------------------
+    # 3. Convert Pydantic object to dictionary
+    # --------------------------------------------------------
 
     features = data.features.model_dump()
 
 
-    # -----------------------------
-    # 4. Send to ML model
-    # -----------------------------
+    # --------------------------------------------------------
+    # 4. ML prediction
+    # --------------------------------------------------------
 
     prediction = predict(features)
 
 
-    # -----------------------------
+    # --------------------------------------------------------
     # 5. Calculate risk
-    # -----------------------------
+    # --------------------------------------------------------
 
     risk = calculate_risk(
         prediction["anomaly_score"]
     )
+    if risk["risk_level"] == "CRITICAL":
+        session.status = "LOCKED"
+
+    # --------------------------------------------------------
+    # 6. Adaptive learning
+    # --------------------------------------------------------
+
+    learning_result = update_behavior_profile(
+        db=db,
+        user_id=session.user_id,
+        device_id=session.device_id,
+        features=features,
+        risk_level=risk["risk_level"],
+        confidence=prediction["confidence"]
+    )
 
 
-    # -----------------------------
-    # 6. Store behavioral sample
-    # -----------------------------
+    # --------------------------------------------------------
+    # 7. Store behavioral sample
+    # --------------------------------------------------------
 
     sample = BehaviorSample(
 
@@ -175,9 +191,9 @@ def process_features(
     db.add(sample)
 
 
-    # -----------------------------
-    # 7. Store security event
-    # -----------------------------
+    # --------------------------------------------------------
+    # 8. Store risk event
+    # --------------------------------------------------------
 
     risk_event = RiskEvent(
 
@@ -194,15 +210,20 @@ def process_features(
 
     db.add(risk_event)
 
+
+    # --------------------------------------------------------
+    # 9. Commit everything
+    # --------------------------------------------------------
+
     db.commit()
 
     db.refresh(sample)
     db.refresh(risk_event)
 
 
-    # -----------------------------
-    # 8. Return result
-    # -----------------------------
+    # --------------------------------------------------------
+    # 10. Return result
+    # --------------------------------------------------------
 
     return {
 
@@ -218,8 +239,15 @@ def process_features(
 
         "confidence": prediction["confidence"],
 
+        "learning": learning_result,
+
         "timestamp": sample.timestamp
     }
+
+
+# ============================================================
+# SESSION STATUS
+# ============================================================
 
 @router.get("/{session_id}/status")
 def get_session_status(
@@ -258,22 +286,39 @@ def get_session_status(
     if latest_event:
 
         return {
+
             "session_id": session.id,
+
             "status": session.status,
-            "risk_score": latest_event.risk_score,
-            "risk_level": latest_event.risk_level,
-            "action": latest_event.action
+
+            "risk_score":
+                latest_event.risk_score,
+
+            "risk_level":
+                latest_event.risk_level,
+
+            "action":
+                latest_event.action
         }
 
 
     return {
+
         "session_id": session.id,
+
         "status": session.status,
+
         "risk_score": 0,
+
         "risk_level": "UNKNOWN",
+
         "action": "WAITING_FOR_DATA"
     }
 
+
+# ============================================================
+# END SESSION
+# ============================================================
 
 @router.post("/{session_id}/end")
 def end_session(
@@ -298,12 +343,58 @@ def end_session(
 
 
     session.status = "ENDED"
+
     session.ended_at = datetime.utcnow()
 
     db.commit()
 
     return {
-        "message": "Verification session ended",
+
+        "message":
+            "Verification session ended",
+
+        "session_id":
+            session_id,
+
+        "status":
+            session.status
+    }
+
+@router.get("/{session_id}/action")
+def get_session_action(
+    session_id: int,
+    db: Session = Depends(get_db)
+):
+    session = (
+        db.query(SessionModel)
+        .filter(SessionModel.id == session_id)
+        .first()
+    )
+
+    if not session:
+        raise HTTPException(
+            status_code=404,
+            detail="Session not found"
+        )
+
+    latest_event = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.session_id == session_id)
+        .order_by(RiskEvent.timestamp.desc())
+        .first()
+    )
+
+    if not latest_event:
+        return {
+            "session_id": session_id,
+            "action": "WAITING",
+            "risk_level": "UNKNOWN"
+        }
+
+    return {
         "session_id": session_id,
-        "status": session.status
+        "action": latest_event.action,
+        "risk_level": latest_event.risk_level,
+        "risk_score": latest_event.risk_score,
+        "session_status": session.status
     }
