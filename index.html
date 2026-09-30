@@ -1,0 +1,302 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sentinel AI | Behavioral Security</title>
+
+    <!-- CSS LINK FOR LIVE SERVER -->
+    <link rel="stylesheet" href="./style.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="./script.js"></script>
+</head>
+
+<body>
+
+<div class="app-container">
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">S</div>
+            <div>
+                <h2>Sentinel<span>AI</span></h2>
+                <p>Behavioral Security</p>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <p class="nav-label">MENU</p>
+
+            <a href="#" class="nav-link active" data-page="overview">Overview</a>
+            <a href="#" class="nav-link" data-page="authentication">Authentication</a>
+            <a href="#" class="nav-link" data-page="analytics">Analytics</a>
+            <a href="#" class="nav-link" data-page="settings">Settings</a>
+            <a href="#" class="nav-link" data-page="about">About Sentinel</a>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="system-status">
+                <span class="status-dot"></span>
+                System Online
+            </div>
+
+            <div class="profile">
+                <div class="avatar">A</div>
+                <div>
+                    <h4>Avni Tyagi</h4>
+                    <p>Administrator</p>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb">
+                    Workspace / <span id="current-page">Overview</span>
+                </p>
+
+                <h1>Welcome back, Avni</h1>
+                <p class="subtitle">Here's what's happening with your security system.</p>
+            </div>
+
+            <button class="notification-btn" type="button">♧</button>
+        </header>
+
+
+        <!-- OVERVIEW -->
+
+        <section class="page active" id="overview">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Dashboard Overview</h2>
+                    <p>Monitor your behavioral authentication activity.</p>
+                </div>
+
+                <button class="primary-btn" id="start-auth">
+                    + New Verification
+                </button>
+            </div>
+
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+                    <p>Total Verifications</p>
+                    <h2>1,284</h2>
+                    <span class="stat-note">Demo data</span>
+                </div>
+
+                <div class="stat-card">
+                    <p>Verified Sessions</p>
+                    <h2>1,192</h2>
+                    <span class="stat-note">Demo data</span>
+                </div>
+
+                <div class="stat-card">
+                    <p>Average Typing Speed</p>
+                    <h2>68 WPM</h2>
+                    <span class="stat-note">Demo data</span>
+                </div>
+
+                <div class="stat-card">
+                    <p>System Status</p>
+                    <h2 class="online-text">Active</h2>
+                    <span class="stat-note">Frontend preview</span>
+                </div>
+
+            </div>
+
+
+            <div class="content-grid">
+
+                <div class="panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h3>Typing Consistency</h3>
+                            <p>Illustrative sample data</p>
+                        </div>
+
+                        <select id="chart-period">
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="year">This Year</option>
+                        </select>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="typingChart"></canvas>
+                    </div>
+                </div>
+
+
+                <div class="panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h3>Recent Activity</h3>
+                            <p>Demo activity</p>
+                        </div>
+                    </div>
+
+                    <div class="activity-item">
+                        <span class="activity-dot"></span>
+                        <div>
+                            <h4>Dashboard initialized</h4>
+                            <p>Frontend loaded successfully</p>
+                        </div>
+                    </div>
+
+                    <div class="activity-item">
+                        <span class="activity-dot"></span>
+                        <div>
+                            <h4>Authentication module</h4>
+                            <p>Ready for integration</p>
+                        </div>
+                    </div>
+
+                    <div class="activity-item">
+                        <span class="activity-dot"></span>
+                        <div>
+                            <h4>Analytics module</h4>
+                            <p>Sample data displayed</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="panel insight-panel">
+                <span class="eyebrow">SENTINEL INSIGHT</span>
+                <h3>Behavioral authentication, reimagined.</h3>
+                <p>
+                    Sentinel AI explores how typing patterns can support
+                    identity verification.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- AUTHENTICATION -->
+
+        <section class="page" id="authentication">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Authentication</h2>
+                    <p>Enter a typing sample to preview the interface.</p>
+                </div>
+            </div>
+
+            <div class="panel auth-panel">
+
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter your username">
+
+                <label for="typing-input">Typing Sample</label>
+
+                <textarea id="typing-input"
+                    placeholder="Start typing your sample here..."
+                    rows="5"></textarea>
+
+                <div class="input-footer">
+                    <span>Characters: <span id="character-count">0</span></span>
+                    <span id="capture-status">Waiting for input...</span>
+                </div>
+
+                <button class="primary-btn" id="verify-btn">
+                    Analyze Typing Sample
+                </button>
+
+                <div id="auth-result" class="auth-result"></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ANALYTICS -->
+
+        <section class="page" id="analytics">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Analytics</h2>
+                    <p>Illustrative session statistics.</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Session Overview</h3>
+
+                <div class="chart-container">
+                    <canvas id="analyticsChart"></canvas>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- SETTINGS -->
+
+        <section class="page" id="settings">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Settings</h2>
+                    <p>Application configuration.</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>System Preferences</h3>
+                <p>Settings will be available in a future version.</p>
+            </div>
+
+        </section>
+
+
+        <!-- ABOUT -->
+
+        <section class="page" id="about">
+
+            <div class="section-heading">
+                <div>
+                    <h2>About Sentinel AI</h2>
+                    <p>Behavioral biometrics project.</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>What is Sentinel AI?</h3>
+                <p>
+                    Sentinel AI is a student project exploring keystroke
+                    dynamics and behavioral authentication using typing patterns.
+                </p>
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="./script.js"></script>
+
+</body>
+</html>
